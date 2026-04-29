@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Fitness AI Assistant</title>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="badge">Учебный AI-проект</div>
+      <h1>Fitness AI Assistant</h1>
+      <p>
+        Задайте вопрос о тренировках, восстановлении или спортивном питании.
+        Ассистент ответит на основе локальной TXT-базы знаний.
+      </p>
+    </section>
+
+    <section class="search-card">
+      <form id="ask-form">
+        <input
+          id="query-input"
+          type="text"
+          placeholder="Например: что есть после тренировки?"
+          required
+        />
+        <button type="submit">Спросить</button>
+      </form>
+
+      <div class="examples">
+        <button class="example-btn" data-query="Тренировка для новичка">Тренировка для новичка</button>
+        <button class="example-btn" data-query="Что есть после тренировки?">Что есть после тренировки?</button>
+        <button class="example-btn" data-query="Что такое креатин?">Что такое креатин?</button>
+      </div>
+
+      <div id="status"></div>
+
+      <div id="answer" class="answer hidden"></div>
+
+      <p class="disclaimer">
+        Информация носит учебный и справочный характер и не заменяет консультацию врача,
+        тренера или нутрициолога.
+      </p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
