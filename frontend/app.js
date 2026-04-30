@@ -1,4 +1,4 @@
-const API_URL = "http://127.0.0.1:8000/ask";
+const API_URL = "https://fitness-ai-assistant1.onrender.com/ask";
 // После деплоя на Render заменить на:
 // const API_URL = "https://your-render-service.onrender.com/ask";
 
