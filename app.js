@@ -1,20 +1,51 @@
 const API_URL = "https://fitness-ai-assistant1.onrender.com/ask";
-// После деплоя на Render заменить на:
-// const API_URL = "https://your-render-service.onrender.com/ask";
 
 const form = document.getElementById("ask-form");
 const input = document.getElementById("query-input");
 const statusEl = document.getElementById("status");
-const answerEl = document.getElementById("answer");
+const chatEl = document.getElementById("chat");
 const exampleButtons = document.querySelectorAll(".example-btn");
+
+let history = [];
+
+function addMessage(role, text, sources = []) {
+  const div = document.createElement("div");
+  div.className = `message ${role}`;
+
+  div.textContent = text;
+
+  if (role === "assistant" && sources.length > 0) {
+    const sourcesEl = document.createElement("div");
+    sourcesEl.className = "sources";
+
+    sourcesEl.innerHTML =
+      "<strong>Источники:</strong><br>" +
+      sources
+        .map((source) => {
+          return `ID ${source.id}: ${source.title} (${source.category}, score ${source.score})`;
+        })
+        .join("<br>");
+
+    div.appendChild(sourcesEl);
+  }
+
+  chatEl.appendChild(div);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
 
 async function askQuestion(query) {
   const button = form.querySelector("button");
 
-  statusEl.textContent = "Ищу ответ в базе знаний...";
-  answerEl.classList.add("hidden");
-  answerEl.textContent = "";
+  addMessage("user", query);
+
+  history.push({
+    role: "user",
+    content: query
+  });
+
+  statusEl.textContent = "Ассистент ищет ответ...";
   button.disabled = true;
+  input.value = "";
 
   try {
     const response = await fetch(API_URL, {
@@ -22,19 +53,34 @@ async function askQuestion(query) {
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ query })
+      body: JSON.stringify({
+        query,
+        history: history.slice(-8)
+      })
     });
 
-    const data = await response.json();
+    let data;
 
-    if (!response.ok) {
-      throw new Error(data.detail || "Ошибка сервера");
+    try {
+      data = await response.json();
+    } catch {
+      data = { detail: await response.text() };
     }
 
+    if (!response.ok) {
+      throw new Error(data.detail || `Ошибка сервера: ${response.status}`);
+    }
+
+    addMessage("assistant", data.answer, data.sources || []);
+
+    history.push({
+      role: "assistant",
+      content: data.answer
+    });
+
     statusEl.textContent = "";
-    answerEl.textContent = data.answer;
-    answerEl.classList.remove("hidden");
   } catch (error) {
+    console.error(error);
     statusEl.textContent = "Ошибка: " + error.message;
   } finally {
     button.disabled = false;
@@ -53,7 +99,6 @@ form.addEventListener("submit", async function (event) {
 exampleButtons.forEach((btn) => {
   btn.addEventListener("click", async () => {
     const query = btn.dataset.query;
-    input.value = query;
     await askQuestion(query);
   });
 });

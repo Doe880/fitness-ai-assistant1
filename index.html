@@ -11,34 +11,37 @@
 <body>
   <main class="page">
     <section class="hero">
-      <div class="badge">Учебный AI-проект</div>
+      <div class="badge">AI-Фитнестренер</div>
       <h1>Fitness AI Assistant</h1>
       <p>
         Задайте вопрос о тренировках, восстановлении или спортивном питании.
-        Ассистент ответит на основе локальной TXT-базы знаний.
       </p>
     </section>
 
-    <section class="search-card">
-      <form id="ask-form">
-        <input
-          id="query-input"
-          type="text"
-          placeholder="Например: что есть после тренировки?"
-          required
-        />
-        <button type="submit">Спросить</button>
-      </form>
+    <section class="chat-card">
+      <div id="chat" class="chat">
+        <div class="message assistant">
+          Привет! Я помогу найти информацию по тренировкам и спортивному питанию.
+        </div>
+      </div>
 
       <div class="examples">
-        <button class="example-btn" data-query="Тренировка для новичка">Тренировка для новичка</button>
+        <button class="example-btn" data-query="Тренировка груди">Тренировка груди</button>
         <button class="example-btn" data-query="Что есть после тренировки?">Что есть после тренировки?</button>
         <button class="example-btn" data-query="Что такое креатин?">Что такое креатин?</button>
       </div>
 
-      <div id="status"></div>
+      <form id="ask-form">
+        <input
+          id="query-input"
+          type="text"
+          placeholder="Например: как тренировать спину?"
+          required
+        />
+        <button type="submit">Отправить</button>
+      </form>
 
-      <div id="answer" class="answer hidden"></div>
+      <div id="status"></div>
 
       <p class="disclaimer">
         Информация носит учебный и справочный характер и не заменяет консультацию врача,
