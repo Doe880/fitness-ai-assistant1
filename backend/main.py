@@ -45,7 +45,6 @@ class AskRequest(BaseModel):
 
 class AskResponse(BaseModel):
     answer: str
-    sources: list[dict]
 
 
 @app.get("/")
@@ -76,10 +75,7 @@ async def ask(req: AskRequest):
             sources=sources
         )
 
-        return AskResponse(
-            answer=answer,
-            sources=sources
-        )
+        return AskResponse(answer=answer)
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

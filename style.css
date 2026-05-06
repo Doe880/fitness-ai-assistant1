@@ -85,14 +85,6 @@ body {
   color: #111827;
 }
 
-.sources {
-  margin-top: 10px;
-  font-size: 13px;
-  color: #4b5563;
-  border-top: 1px solid #e5e7eb;
-  padding-top: 8px;
-}
-
 .examples {
   display: flex;
   flex-wrap: wrap;

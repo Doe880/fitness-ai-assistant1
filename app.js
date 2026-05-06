@@ -8,26 +8,10 @@ const exampleButtons = document.querySelectorAll(".example-btn");
 
 let history = [];
 
-function addMessage(role, text, sources = []) {
+function addMessage(role, text) {
   const div = document.createElement("div");
   div.className = `message ${role}`;
-
   div.textContent = text;
-
-  if (role === "assistant" && sources.length > 0) {
-    const sourcesEl = document.createElement("div");
-    sourcesEl.className = "sources";
-
-    sourcesEl.innerHTML =
-      "<strong>Источники:</strong><br>" +
-      sources
-        .map((source) => {
-          return `ID ${source.id}: ${source.title} (${source.category}, score ${source.score})`;
-        })
-        .join("<br>");
-
-    div.appendChild(sourcesEl);
-  }
 
   chatEl.appendChild(div);
   chatEl.scrollTop = chatEl.scrollHeight;
@@ -71,7 +55,7 @@ async function askQuestion(query) {
       throw new Error(data.detail || `Ошибка сервера: ${response.status}`);
     }
 
-    addMessage("assistant", data.answer, data.sources || []);
+    addMessage("assistant", data.answer);
 
     history.push({
       role: "assistant",
