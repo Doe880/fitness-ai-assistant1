@@ -5,3 +5,7 @@ openai
 openai-agents
 pydantic
 numpy
+sqlalchemy
+psycopg[binary]
+passlib[bcrypt]
+python-jose[cryptography]
