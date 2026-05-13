@@ -3,128 +3,121 @@ from pathlib import Path
 
 import numpy as np
 
-from embeddings import create_embedding
-
 
 INDEX_FILE = Path(__file__).parent / "fitness_index.json"
 
 
 def load_index() -> list[dict]:
+    """
+    Загружает векторный индекс из fitness_index.json.
+    """
     if not INDEX_FILE.exists():
         raise FileNotFoundError(
-            "fitness_index.json не найден. Сначала запусти: python build_index.py"
+            f"Index file not found: {INDEX_FILE}. "
+            f"Run build_index.py first."
         )
 
-    return json.loads(INDEX_FILE.read_text(encoding="utf-8"))
+    with open(INDEX_FILE, "r", encoding="utf-8") as file:
+        return json.load(file)
 
 
-def cosine_similarity(a: list[float], b: list[float]) -> float:
-    vec_a = np.array(a)
-    vec_b = np.array(b)
+# Загружаем индекс один раз при старте приложения
+INDEX = load_index()
 
-    denominator = np.linalg.norm(vec_a) * np.linalg.norm(vec_b)
+
+def cosine_similarity(vec1: list[float], vec2: list[float]) -> float:
+    """
+    Косинусное сходство между двумя векторами.
+    """
+    a = np.array(vec1)
+    b = np.array(vec2)
+
+    denominator = np.linalg.norm(a) * np.linalg.norm(b)
 
     if denominator == 0:
         return 0.0
 
-    return float(np.dot(vec_a, vec_b) / denominator)
+    return float(np.dot(a, b) / denominator)
 
 
 def extract_title(text: str) -> str:
+    """
+    Fallback: извлекает заголовок из текстового блока,
+    если metadata отсутствует.
+    """
     for line in text.splitlines():
         if line.startswith("ТЕМА:"):
             return line.replace("ТЕМА:", "").strip()
+
     return "Без названия"
 
 
 def extract_category(text: str) -> str:
+    """
+    Fallback: извлекает категорию из текстового блока,
+    если metadata отсутствует.
+    """
     for line in text.splitlines():
         if line.startswith("КАТЕГОРИЯ:"):
             return line.replace("КАТЕГОРИЯ:", "").strip()
+
     return "без категории"
 
 
-def keyword_score(query: str, text: str) -> float:
-    query_words = [
-        word.strip(".,!?;:()[]{}\"'").lower().replace("ё", "е")
-        for word in query.split()
-        if len(word.strip()) > 2
-    ]
+def semantic_search(
+    query: str,
+    limit: int = 5
+) -> list[dict]:
+    """
+    Выполняет semantic search по fitness_index.json.
 
-    text_lower = text.lower().replace("ё", "е")
+    Возвращает список словарей:
+    {
+        "id": ...,
+        "text": ...,
+        "title": ...,
+        "category": ...,
+        "metadata": {...},
+        "score": ...
+    }
+    """
+    # Импорт внутри функции, чтобы избежать циклических импортов
+    from embeddings import create_embedding
 
-    if not query_words:
-        return 0.0
-
-    matches = sum(1 for word in query_words if word in text_lower)
-
-    return matches / len(query_words)
-
-
-def detect_category(query: str) -> str | None:
-    q = query.lower()
-
-    nutrition_words = [
-        "еда", "питание", "белок", "углеводы", "протеин",
-        "креатин", "калории", "масса", "вес", "спортпит"
-    ]
-
-    training_words = [
-        "тренировка", "упражнение", "грудь", "спина", "ноги",
-        "плечи", "руки", "пресс", "зал", "дома"
-    ]
-
-    recovery_words = [
-        "восстановление", "сон", "усталость", "перетренированность",
-        "болят", "отдых"
-    ]
-
-    if any(word in q for word in nutrition_words):
-        return "питание"
-
-    if any(word in q for word in training_words):
-        return "тренировки"
-
-    if any(word in q for word in recovery_words):
-        return "восстановление"
-
-    return None
-
-
-def semantic_search(query: str, limit: int = 5) -> list[dict]:
-    index = load_index()
     query_embedding = create_embedding(query)
 
-    category_hint = detect_category(query)
+    results = []
 
-    scored = []
+    for item in INDEX:
+        score = cosine_similarity(
+            query_embedding,
+            item["embedding"]
+        )
 
-    for item in index:
-        text = item["text"]
+        text = item.get("text", "")
+        metadata = item.get("metadata", {})
 
-        semantic = cosine_similarity(query_embedding, item["embedding"])
-        keyword = keyword_score(query, text)
-
-        category = extract_category(text)
-
-        category_bonus = 0.0
-        if category_hint and category_hint == category:
-            category_bonus = 0.08
-
-        final_score = semantic * 0.75 + keyword * 0.25 + category_bonus
-
-        scored.append(
+        results.append(
             {
-                "id": item["id"],
-                "title": extract_title(text),
-                "category": category,
+                "id": item.get("id"),
                 "text": text,
-                "semantic_score": semantic,
-                "keyword_score": keyword,
-                "score": final_score
+                "title": metadata.get(
+                    "title",
+                    extract_title(text)
+                ),
+                "category": metadata.get(
+                    "category",
+                    extract_category(text)
+                ),
+                "metadata": metadata,
+                "score": score,
             }
         )
 
-    scored.sort(key=lambda item: item["score"], reverse=True)
+    # Сортировка по убыванию релевантности
+    results.sort(
+        key=lambda x: x["score"],
+        reverse=True
+    )
 
-    return scored[:limit]
+    return results[:limit]

@@ -25,6 +25,7 @@ def build_index() -> None:
             {
                 "id": chunk["id"],
                 "text": chunk["text"],
+                "metadata": chunk.get("metadata", {}),
                 "embedding": embedding
             }
         )
