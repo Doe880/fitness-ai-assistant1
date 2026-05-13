@@ -6,6 +6,17 @@ from vector_store import semantic_search
 LAST_SOURCES: list[dict] = []
 
 
+TRAINING_CATEGORIES = {
+    "тренировки",
+    "восстановление",
+}
+
+NUTRITION_CATEGORIES = {
+    "питание",
+    "спортпит",
+}
+
+
 def format_results_for_agent(results: list[dict]) -> str:
     if not results:
         return "В базе знаний не найдено достаточно релевантной информации."
@@ -13,12 +24,25 @@ def format_results_for_agent(results: list[dict]) -> str:
     parts = []
 
     for item in results:
+        metadata = item.get("metadata", {})
+
+        title = item.get("title") or metadata.get("title", "Без названия")
+        category = item.get("category") or metadata.get("category", "без категории")
+        item_type = metadata.get("type", "")
+        level = ", ".join(metadata.get("level", [])) if isinstance(metadata.get("level"), list) else metadata.get("level", "")
+        equipment = ", ".join(metadata.get("equipment", [])) if isinstance(metadata.get("equipment"), list) else metadata.get("equipment", "")
+        muscle_groups = ", ".join(metadata.get("muscle_groups", [])) if isinstance(metadata.get("muscle_groups"), list) else metadata.get("muscle_groups", "")
+
         parts.append(
-            f"Источник ID: {item['id']}\n"
-            f"Тема: {item['title']}\n"
-            f"Категория: {item['category']}\n"
-            f"Релевантность: {item['score']:.3f}\n"
-            f"{item['text']}"
+            f"Источник ID: {item.get('id')}\n"
+            f"Тема: {title}\n"
+            f"Категория: {category}\n"
+            f"Тип: {item_type}\n"
+            f"Уровень: {level}\n"
+            f"Оборудование: {equipment}\n"
+            f"Группы мышц: {muscle_groups}\n"
+            f"Релевантность: {item.get('score', 0):.3f}\n"
+            f"{item.get('text', '')}"
         )
 
     return "\n\n---\n\n".join(parts)
@@ -29,24 +53,32 @@ def save_sources(results: list[dict]) -> None:
 
     LAST_SOURCES = [
         {
-            "id": item["id"],
-            "title": item["title"],
-            "category": item["category"],
-            "score": round(item["score"], 3)
+            "id": item.get("id"),
+            "title": item.get("title", "Без названия"),
+            "category": item.get("category", "без категории"),
+            "score": round(item.get("score", 0), 3),
         }
         for item in results
     ]
+
+
+def is_category(item: dict, allowed_categories: set[str]) -> bool:
+    metadata = item.get("metadata", {})
+    category = item.get("category") or metadata.get("category")
+
+    return category in allowed_categories
 
 
 @function_tool
 def search_training_knowledge(query: str) -> str:
     global LAST_SOURCES
 
-    results = semantic_search(query, limit=6)
+    results = semantic_search(query, limit=8)
 
     filtered = [
         item for item in results
-        if item["score"] > 0.20 and item["category"] in {"тренировки", "восстановление"}
+        if item.get("score", 0) > 0.20
+        and is_category(item, TRAINING_CATEGORIES)
     ]
 
     save_sources(filtered)
@@ -58,11 +90,12 @@ def search_training_knowledge(query: str) -> str:
 def search_nutrition_knowledge(query: str) -> str:
     global LAST_SOURCES
 
-    results = semantic_search(query, limit=6)
+    results = semantic_search(query, limit=8)
 
     filtered = [
         item for item in results
-        if item["score"] > 0.20 and item["category"] in {"питание", "спортпит"}
+        if item.get("score", 0) > 0.20
+        and is_category(item, NUTRITION_CATEGORIES)
     ]
 
     save_sources(filtered)
@@ -81,14 +114,16 @@ def search_program_knowledge(query: str) -> str:
     expanded_query = (
         query
         + " программа на неделю тренировка новичок всё тело частота тренировок "
-        + "грудь спина ноги плечи руки пресс восстановление"
+        + "грудь спина ноги плечи руки пресс восстановление день отдыха легкая активность "
+        + "дом зал оборудование уровень"
     )
 
-    results = semantic_search(expanded_query, limit=8)
+    results = semantic_search(expanded_query, limit=10)
 
     filtered = [
         item for item in results
-        if item["score"] > 0.18 and item["category"] in {"тренировки", "восстановление"}
+        if item.get("score", 0) > 0.18
+        and is_category(item, TRAINING_CATEGORIES)
     ]
 
     save_sources(filtered)
@@ -106,6 +141,7 @@ training_agent = Agent(
         "Отвечай только на основе найденной базы знаний. "
         "Не давай медицинские рекомендации. "
         "Если речь о боли, травмах или болезни — посоветуй обратиться к специалисту. "
+        "Если в базе знаний нет информации, так и скажи. "
         "Формат: короткий вывод, затем 2–4 практических пункта."
     ),
     tools=[search_training_knowledge],
@@ -123,6 +159,7 @@ nutrition_agent = Agent(
         "Не назначай дозировки, лечение или медицинские схемы. "
         "Если речь о заболеваниях, лекарствах, беременности или хронических состояниях — "
         "посоветуй обратиться к врачу или квалифицированному специалисту. "
+        "Если в базе знаний нет информации, так и скажи. "
         "Формат: короткий вывод, затем 2–4 практических пункта."
     ),
     tools=[search_nutrition_knowledge],
@@ -142,6 +179,7 @@ program_agent = Agent(
         "Если пользователь новичок, предлагай 2–3 тренировки в неделю. "
         "Если пользователь просит программу на неделю, сделай план по дням. "
         "Обязательно добавляй дни отдыха или лёгкой активности. "
+        "Если в базе знаний нет информации, так и скажи. "
         "Формат ответа:\n"
         "1. Краткое пояснение\n"
         "2. Программа по дням\n"
@@ -192,7 +230,10 @@ def build_prompt(question: str, history: list[dict] | None = None) -> str:
     )
 
 
-async def ask_agent(question: str, history: list[dict] | None = None) -> tuple[str, list[dict]]:
+async def ask_agent(
+    question: str,
+    history: list[dict] | None = None
+) -> tuple[str, list[dict]]:
     global LAST_SOURCES
 
     LAST_SOURCES = []
