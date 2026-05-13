@@ -3,52 +3,133 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <title>Fitness AI Assistant</title>
-
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <main class="page">
-    <section class="hero">
-      <div class="badge">AI-Фитнестренер</div>
-      <h1>Fitness AI Assistant</h1>
-      <p>
-        Задайте вопрос о тренировках, восстановлении или спортивном питании.
-      </p>
-    </section>
-
-    <section class="chat-card">
-      <div id="chat" class="chat">
-        <div class="message assistant">
-          Привет! Я помогу найти информацию по тренировкам и спортивному питанию.
-        </div>
+  <main class="app">
+    <header class="header">
+      <div>
+        <div class="badge">Fitness AI Assistant</div>
+        <h1>Тренировки и спортивное питание</h1>
       </div>
 
-      <div class="examples">
-        <button class="example-btn" data-query="Тренировка груди">Тренировка груди</button>
-        <button class="example-btn" data-query="Что есть после тренировки?">Что есть после тренировки?</button>
-        <button class="example-btn" data-query="Что такое креатин?">Что такое креатин?</button>
-        <button class="example-btn" data-query="Составь программу тренировок на неделю для новичка">Программа на неделю</button>
+      <button id="logout-btn" class="secondary hidden">Выйти</button>
+    </header>
+
+    <section id="auth-screen" class="card">
+      <h2>Вход</h2>
+
+      <div class="tabs">
+        <button id="login-tab" class="tab active">Войти</button>
+        <button id="register-tab" class="tab">Регистрация</button>
       </div>
 
-      <form id="ask-form">
-        <input
-          id="query-input"
-          type="text"
-          placeholder="Например: как тренировать спину?"
-          required
-        />
-        <button type="submit">Отправить</button>
+      <form id="auth-form">
+        <input id="email-input" type="email" placeholder="Email" required />
+        <input id="password-input" type="password" placeholder="Пароль" required minlength="6" />
+        <button type="submit" id="auth-submit">Войти</button>
       </form>
 
-      <div id="status"></div>
-
-      <p class="disclaimer">
-        Информация носит учебный и справочный характер и не заменяет консультацию врача,
-        тренера или нутрициолога.
-      </p>
+      <div id="auth-status" class="status"></div>
     </section>
+
+    <section id="main-screen" class="hidden">
+      <nav class="nav">
+        <button class="nav-btn active" data-screen="chat-screen">Чат</button>
+        <button class="nav-btn" data-screen="profile-screen">Профиль</button>
+        <button class="nav-btn" data-screen="plans-screen">Мои планы</button>
+      </nav>
+
+      <section id="chat-screen" class="screen card">
+        <div id="chat" class="chat">
+          <div class="message assistant">
+            Привет! Я помогу с тренировками, питанием и программой на неделю.
+          </div>
+        </div>
+
+        <div class="examples">
+          <button class="example-btn" data-query="Составь программу тренировок на неделю для новичка">Программа на неделю</button>
+          <button class="example-btn" data-query="Как тренировать грудь?">Тренировка груди</button>
+          <button class="example-btn" data-query="Что есть после тренировки?">Питание после тренировки</button>
+          <button class="example-btn" data-query="Что такое креатин?">Креатин</button>
+        </div>
+
+        <form id="ask-form" class="row">
+          <input id="query-input" type="text" placeholder="Введите вопрос..." required />
+          <button type="submit">Отправить</button>
+        </form>
+
+        <div id="chat-status" class="status"></div>
+      </section>
+
+      <section id="profile-screen" class="screen card hidden">
+        <h2>Профиль</h2>
+        <p class="muted">Эти данные будут использоваться для персональных рекомендаций и планов.</p>
+
+        <form id="profile-form" class="form-grid">
+          <label>
+            Цель
+            <select id="goal-input">
+              <option value="общая форма">Общая форма</option>
+              <option value="набор мышечной массы">Набор мышечной массы</option>
+              <option value="снижение веса">Снижение веса</option>
+              <option value="выносливость">Выносливость</option>
+            </select>
+          </label>
+
+          <label>
+            Уровень
+            <select id="level-input">
+              <option value="новичок">Новичок</option>
+              <option value="средний">Средний</option>
+              <option value="продвинутый">Продвинутый</option>
+            </select>
+          </label>
+
+          <label>
+            Оборудование
+            <select id="equipment-input">
+              <option value="дом без оборудования">Дом без оборудования</option>
+              <option value="дом с гантелями">Дом с гантелями</option>
+              <option value="тренажерный зал">Тренажерный зал</option>
+            </select>
+          </label>
+
+          <label>
+            Дней в неделю
+            <select id="days-input">
+              <option value="2">2</option>
+              <option value="3" selected>3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+          </label>
+
+          <button type="submit">Сохранить профиль</button>
+        </form>
+
+        <div id="profile-status" class="status"></div>
+      </section>
+
+      <section id="plans-screen" class="screen card hidden">
+        <div class="plans-header">
+          <div>
+            <h2>Мои планы</h2>
+            <p class="muted">Здесь сохраняются созданные тренировочные планы.</p>
+          </div>
+          <button id="create-plan-btn">Создать план</button>
+        </div>
+
+        <div id="plans-status" class="status"></div>
+        <div id="plans-list" class="plans-list"></div>
+      </section>
+    </section>
+
+    <p class="disclaimer">
+      Информация носит учебный и справочный характер и не заменяет консультацию врача,
+      тренера или нутрициолога.
+    </p>
   </main>
 
   <script src="app.js"></script>
