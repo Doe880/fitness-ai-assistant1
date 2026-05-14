@@ -1,4 +1,5 @@
 from agents import Agent, Runner, function_tool
+from agents.model_settings import ModelSettings
 
 from vector_store import semantic_search
 
@@ -17,6 +18,18 @@ NUTRITION_CATEGORIES = {
 }
 
 
+CHUNK_CHAR_LIMIT = 1500
+PROMPT_CHAR_LIMIT = 12000
+
+DEFAULT_MODEL_SETTINGS = ModelSettings(
+    max_tokens=800,
+)
+
+PROGRAM_MODEL_SETTINGS = ModelSettings(
+    max_tokens=1200,
+)
+
+
 def format_results_for_agent(results: list[dict]) -> str:
     if not results:
         return "В базе знаний не найдено достаточно релевантной информации."
@@ -29,9 +42,26 @@ def format_results_for_agent(results: list[dict]) -> str:
         title = item.get("title") or metadata.get("title", "Без названия")
         category = item.get("category") or metadata.get("category", "без категории")
         item_type = metadata.get("type", "")
-        level = ", ".join(metadata.get("level", [])) if isinstance(metadata.get("level"), list) else metadata.get("level", "")
-        equipment = ", ".join(metadata.get("equipment", [])) if isinstance(metadata.get("equipment"), list) else metadata.get("equipment", "")
-        muscle_groups = ", ".join(metadata.get("muscle_groups", [])) if isinstance(metadata.get("muscle_groups"), list) else metadata.get("muscle_groups", "")
+
+        level = (
+            ", ".join(metadata.get("level", []))
+            if isinstance(metadata.get("level"), list)
+            else metadata.get("level", "")
+        )
+
+        equipment = (
+            ", ".join(metadata.get("equipment", []))
+            if isinstance(metadata.get("equipment"), list)
+            else metadata.get("equipment", "")
+        )
+
+        muscle_groups = (
+            ", ".join(metadata.get("muscle_groups", []))
+            if isinstance(metadata.get("muscle_groups"), list)
+            else metadata.get("muscle_groups", "")
+        )
+
+        text = item.get("text", "")[:CHUNK_CHAR_LIMIT]
 
         parts.append(
             f"Источник ID: {item.get('id')}\n"
@@ -42,7 +72,7 @@ def format_results_for_agent(results: list[dict]) -> str:
             f"Оборудование: {equipment}\n"
             f"Группы мышц: {muscle_groups}\n"
             f"Релевантность: {item.get('score', 0):.3f}\n"
-            f"{item.get('text', '')}"
+            f"{text}"
         )
 
     return "\n\n---\n\n".join(parts)
@@ -73,7 +103,7 @@ def is_category(item: dict, allowed_categories: set[str]) -> bool:
 def search_training_knowledge(query: str) -> str:
     global LAST_SOURCES
 
-    results = semantic_search(query, limit=8)
+    results = semantic_search(query, limit=6)
 
     filtered = [
         item for item in results
@@ -90,7 +120,7 @@ def search_training_knowledge(query: str) -> str:
 def search_nutrition_knowledge(query: str) -> str:
     global LAST_SOURCES
 
-    results = semantic_search(query, limit=8)
+    results = semantic_search(query, limit=6)
 
     filtered = [
         item for item in results
@@ -134,15 +164,19 @@ def search_program_knowledge(query: str) -> str:
 training_agent = Agent(
     name="TrainingAgent",
     model="gpt-5.4-mini",
+    model_settings=DEFAULT_MODEL_SETTINGS,
     instructions=(
-        "Ты специалист по тренировкам. "
+        "Ты опытный фитнес-тренер. "
         "Отвечай на русском языке. "
         "Всегда используй search_training_knowledge. "
         "Отвечай только на основе найденной базы знаний. "
         "Не давай медицинские рекомендации. "
         "Если речь о боли, травмах или болезни — посоветуй обратиться к специалисту. "
-        "Если в базе знаний нет информации, так и скажи. "
-        "Формат: короткий вывод, затем 2–4 практических пункта."
+        "Если информации в базе знаний недостаточно, честно скажи об этом. "
+        "Отвечай естественным, понятным и дружелюбным языком. "
+        "Давай развернутые и полезные ответы, но не растягивай ответ."
+        "Приводи примеры упражнений, количество подходов и повторений, технику выполнения. "
+        "Используй списки и подзаголовки для удобства чтения."
     ),
     tools=[search_training_knowledge],
 )
@@ -151,16 +185,19 @@ training_agent = Agent(
 nutrition_agent = Agent(
     name="NutritionAgent",
     model="gpt-5.4-mini",
+    model_settings=DEFAULT_MODEL_SETTINGS,
     instructions=(
         "Ты специалист по спортивному питанию. "
         "Отвечай на русском языке. "
         "Всегда используй search_nutrition_knowledge. "
         "Отвечай только на основе найденной базы знаний. "
-        "Не назначай дозировки, лечение или медицинские схемы. "
+        "Если информации недостаточно, честно скажи об этом. "
+        "Отвечай понятным и дружелюбным языком. "
+        "Давай ответы с практическими рекомендациями, но без лишней воды. "
+        "Не назначай лечение или медицинские схемы. "
         "Если речь о заболеваниях, лекарствах, беременности или хронических состояниях — "
         "посоветуй обратиться к врачу или квалифицированному специалисту. "
-        "Если в базе знаний нет информации, так и скажи. "
-        "Формат: короткий вывод, затем 2–4 практических пункта."
+        "Используй списки и подзаголовки."
     ),
     tools=[search_nutrition_knowledge],
 )
@@ -169,21 +206,18 @@ nutrition_agent = Agent(
 program_agent = Agent(
     name="ProgramAgent",
     model="gpt-5.4-mini",
+    model_settings=PROGRAM_MODEL_SETTINGS,
     instructions=(
-        "Ты специалист по составлению простых тренировочных программ. "
+        "Ты опытный фитнес-тренер, который составляет понятные тренировочные программы. "
         "Отвечай на русском языке. "
-        "Всегда используй search_program_knowledge перед составлением программы. "
+        "Всегда используй search_program_knowledge. "
         "Составляй программы только на основе базы знаний. "
+        "Если информации недостаточно, честно скажи об этом. "
+        "Если пользователь просит программу на неделю, распиши её по дням с необходимыми упражнениями. "
+        "Добавляй дни отдыха и рекомендации по восстановлению. "
         "Не используй сложные медицинские или реабилитационные рекомендации. "
         "Не назначай опасные нагрузки. "
-        "Если пользователь новичок, предлагай 2–3 тренировки в неделю. "
-        "Если пользователь просит программу на неделю, сделай план по дням. "
-        "Обязательно добавляй дни отдыха или лёгкой активности. "
-        "Если в базе знаний нет информации, так и скажи. "
-        "Формат ответа:\n"
-        "1. Краткое пояснение\n"
-        "2. Программа по дням\n"
-        "3. Важные правила безопасности и восстановления"
+        "Отвечай подробно, структурированно и понятным языком, но не превышай разумный объём."
     ),
     tools=[search_program_knowledge],
 )
@@ -192,6 +226,7 @@ program_agent = Agent(
 main_agent = Agent(
     name="MainFitnessAgent",
     model="gpt-5.4-mini",
+    model_settings=DEFAULT_MODEL_SETTINGS,
     instructions=(
         "Ты главный AI-ассистент сайта про фитнес. "
         "Определи тип запроса пользователя. "
@@ -222,12 +257,14 @@ def build_prompt(question: str, history: list[dict] | None = None) -> str:
         elif role == "assistant":
             history_text += f"Ассистент: {content}\n"
 
-    return (
+    prompt = (
         "История диалога:\n"
         f"{history_text}\n"
         "Новый вопрос пользователя:\n"
         f"{question}"
     )
+
+    return prompt[:PROMPT_CHAR_LIMIT]
 
 
 async def ask_agent(
