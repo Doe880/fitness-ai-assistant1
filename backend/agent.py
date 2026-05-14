@@ -18,7 +18,7 @@ NUTRITION_CATEGORIES = {
 }
 
 
-CHUNK_CHAR_LIMIT = 1500
+CHUNK_CHAR_LIMIT = 1000
 PROMPT_CHAR_LIMIT = 12000
 
 DEFAULT_MODEL_SETTINGS = ModelSettings(
@@ -26,7 +26,7 @@ DEFAULT_MODEL_SETTINGS = ModelSettings(
 )
 
 PROGRAM_MODEL_SETTINGS = ModelSettings(
-    max_tokens=1200,
+    max_tokens=1000,
 )
 
 
