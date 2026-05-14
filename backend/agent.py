@@ -103,7 +103,7 @@ def is_category(item: dict, allowed_categories: set[str]) -> bool:
 def search_training_knowledge(query: str) -> str:
     global LAST_SOURCES
 
-    results = semantic_search(query, limit=6)
+    results = semantic_search(query, limit=4)
 
     filtered = [
         item for item in results
