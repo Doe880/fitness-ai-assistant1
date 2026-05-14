@@ -5,19 +5,20 @@
 body {
   margin: 0;
   font-family: Arial, sans-serif;
+  color: #fff;
+
   background:
     linear-gradient(
       135deg,
-      rgba(17, 24, 39, 0.92),
-      rgba(20, 83, 45, 0.88)
+      rgba(10, 25, 47, 0.72),
+      rgba(6, 78, 59, 0.65)
     ),
     url("./fitness-bg.jpg");
+
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   background-attachment: fixed;
-
-  color: #fff;
 }
 
 .app {
