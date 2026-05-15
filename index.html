@@ -27,7 +27,7 @@
 
       <form id="auth-form">
         <input id="email-input" type="email" placeholder="Email" required />
-        <input id="password-input" type="password" placeholder="Пароль" required minlength="6" />
+        <input id="password-input" type="password" placeholder="Пароль" required minlength="6" maxlength="72" />
         <button type="submit" id="auth-submit">Войти</button>
       </form>
 
@@ -132,6 +132,8 @@
     </p>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -151,13 +151,14 @@ select {
   padding: 14px 16px;
   border-radius: 16px;
   line-height: 1.55;
-  white-space: pre-wrap;
+  white-space: normal;
 }
 
 .message.user {
   margin-left: auto;
   background: #16a34a;
   color: #fff;
+  white-space: pre-wrap;
 }
 
 .message.assistant {
@@ -165,6 +166,65 @@ select {
   background: #fff;
   border: 1px solid #e5e7eb;
   color: #111827;
+}
+
+.message.assistant h1,
+.message.assistant h2,
+.message.assistant h3,
+.plan-content h1,
+.plan-content h2,
+.plan-content h3 {
+  margin-top: 0.9em;
+  margin-bottom: 0.45em;
+  color: #111827;
+  line-height: 1.25;
+}
+
+.message.assistant h1,
+.plan-content h1 {
+  font-size: 24px;
+}
+
+.message.assistant h2,
+.plan-content h2 {
+  font-size: 21px;
+}
+
+.message.assistant h3,
+.plan-content h3 {
+  font-size: 18px;
+}
+
+.message.assistant p,
+.plan-content p {
+  margin: 0.55em 0;
+  line-height: 1.65;
+}
+
+.message.assistant ul,
+.message.assistant ol,
+.plan-content ul,
+.plan-content ol {
+  margin: 0.55em 0 0.75em 1.4em;
+  padding: 0;
+}
+
+.message.assistant li,
+.plan-content li {
+  margin-bottom: 0.3em;
+  line-height: 1.55;
+}
+
+.message.assistant strong,
+.plan-content strong {
+  font-weight: 700;
+}
+
+.message.assistant hr,
+.plan-content hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 1.1em 0;
 }
 
 .status {
@@ -212,11 +272,9 @@ select {
   margin: 0 0 10px;
 }
 
-.plan-card pre {
-  white-space: pre-wrap;
+.plan-content {
   font-family: Arial, sans-serif;
   line-height: 1.55;
-  margin: 0;
 }
 
 .disclaimer {

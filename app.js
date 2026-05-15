@@ -34,6 +34,13 @@ const plansStatus = document.getElementById("plans-status");
 
 let authMode = "login";
 
+function renderMarkdown(text) {
+  if (!text) return "";
+
+  const html = marked.parse(text);
+  return DOMPurify.sanitize(html);
+}
+
 function getToken() {
   return localStorage.getItem("fitness_token");
 }
@@ -123,7 +130,12 @@ function showScreen(screenId) {
 function addMessage(role, text) {
   const div = document.createElement("div");
   div.className = `message ${role}`;
-  div.textContent = text;
+
+  if (role === "assistant") {
+    div.innerHTML = renderMarkdown(text);
+  } else {
+    div.textContent = text;
+  }
 
   chatEl.appendChild(div);
   chatEl.scrollTop = chatEl.scrollHeight;
@@ -193,7 +205,7 @@ async function createWorkoutPlan() {
   plansStatus.textContent = "Создаю тренировочный план...";
 
   try {
-    const data = await apiRequest("/workout-plan", {
+    await apiRequest("/workout-plan", {
       method: "POST",
       body: JSON.stringify({
         goal: goalInput.value,
@@ -231,8 +243,9 @@ async function loadPlans() {
       const title = document.createElement("h3");
       title.textContent = plan.title;
 
-      const content = document.createElement("pre");
-      content.textContent = plan.content;
+      const content = document.createElement("div");
+      content.className = "plan-content";
+      content.innerHTML = renderMarkdown(plan.content);
 
       card.appendChild(title);
       card.appendChild(content);
